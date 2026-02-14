@@ -13,9 +13,11 @@ This project implements a **Hybrid Deep Q-Network (DQN)** system for dynamic veh
 ### Key Innovations
 
 1. **Dueling DQN Architecture**: Separates state value and action advantage estimation for better generalization
-2. **Hybrid Controller**: Adaptive policy switching based on traffic variance (heuristic ↔ DQN)
-3. **Real Road Geometry**: Integration with OSRM routing engine for realistic path calculations
-4. **Live Traffic Simulation**: Dynamic traffic multipliers with visual feedback
+2. **Hybrid Controller**: Adaptive policy switching based on traffic stability (heuristic ↔ DQN)
+3. **Real Road Geometry**: OSRM API integration for actual street paths and travel times
+4. **OSRM-Based Traffic Data**: Real routing times with congestion detection via traffic multipliers
+5. **Heuristic-Guided Action Masking**: Top-k action filtering for efficient RL exploration
+6. **Safety Monitoring**: Integrated overspeed and congestion risk detection
 
 ---
 
@@ -114,9 +116,10 @@ streamlit run app/app.py
 ### Dependencies
 - `streamlit` - Interactive web dashboard
 - `folium` - Map visualization
-- `torch` - Deep learning framework
+- `torch` - Deep learning framework (PyTorch)
 - `numpy` - Numerical computations
 - `requests` - HTTP requests for OSRM API
+- `streamlit-folium` - Folium integration for Streamlit
 
 ---
 
@@ -191,7 +194,7 @@ python scripts/train.py
 ### Potential Extensions
 
 - **Multi-vehicle routing**: Extend to fleet optimization
-- **Real traffic APIs**: Integrate Google/Mapbox traffic data
+- **Enhanced traffic APIs**: Integrate Google Maps/Mapbox for richer traffic data
 - **Advanced RL algorithms**: A3C, PPO, transformer-based policies
 - **Constraint handling**: Time windows, vehicle capacity, priorities
 
@@ -205,11 +208,19 @@ Uses OpenStreetMap Routing Machine for realistic route geometry:
 - Returns actual curved street paths (not straight lines)
 - Provides distance and duration estimates
 
-### Traffic Simulation
-Simulates traffic conditions using:
-- **Base speed**: 30 km/h (urban average)
-- **Multipliers**: 1.0x (free flow) to 2.0x (heavy congestion)
-- **Variance tracking**: Used by hybrid controller for policy selection
+### Traffic Integration
+**Primary Source:** OSRM (OpenStreetMap Routing Machine) API
+- Real routing times based on current road conditions
+- Actual curved street paths (not straight lines)
+- Travel time and distance estimates
+
+**Traffic Multiplier Calculation:**
+- Compares OSRM real time vs. expected time at 40 km/h free flow
+- Multiplier = real_time / expected_time
+- Range: 1.0x (smooth) to 3.0x (heavy congestion)
+- Used by hybrid controller for adaptive policy selection
+
+**Fallback:** Simulated traffic with multipliers 0.8x-1.5x when API unavailable
 
 ### 2-Opt Optimization
 Local search refinement applied after initial route construction:
