@@ -236,8 +236,10 @@ with st.sidebar:
                     st.session_state.locations.append(pt)
                     st.toast(f"✅ Added: {res.get('display_name', '')[:35]}...")
                     st.rerun()
-            except:
-                st.error("Search failed")
+                else:
+                    st.error("No results found")
+            except Exception as e:
+                st.error(f"Search failed: {str(e)[:50]}")
     
     st.caption("Or click directly on the map")
     st.divider()
@@ -299,15 +301,28 @@ with st.sidebar:
             decision = "→ DQN (adaptive)"
         
         st.markdown(
-            f'<div style="background:#0d1117; padding:12px; '
-            f'border-radius:8px; font-family:monospace; font-size:13px;">'
-            f'Variance: <b>{var:.4f}</b><br>'
-            f'Stability: <span style="color:{stab_color}">'
-            f'<b>{stab_label}</b></span><br>'
-            f'{decision}'
+            f'<div style="background:#0d1117; padding:14px; '
+            f'border-radius:8px; font-family:monospace; '
+            f'font-size:15px; line-height:1.8;">'
+            f'<span style="color:#888">Variance:</span> '
+            f'<b style="color:white">{var:.4f}</b><br>'
+            f'<span style="color:#888">Stability:</span> '
+            f'<b style="color:{stab_color}; font-size:17px">'
+            f'{stab_label}</b><br>'
+            f'<span style="color:#888">Decision:</span> '
+            f'<b style="color:white">{decision}</b>'
             f'</div>',
             unsafe_allow_html=True
         )
+        
+        if "traffic_breakdown" in m:
+            st.divider()
+            st.markdown("**🚦 Traffic Breakdown**")
+            breakdown = m["traffic_breakdown"]
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("🟢", f"{breakdown['low']}%", help="Smooth segments")
+            col_b.metric("🟡", f"{breakdown['medium']}%", help="Moderate segments") 
+            col_c.metric("🔴", f"{breakdown['heavy']}%", help="Heavy segments")
 
 m = folium.Map(location=st.session_state.locations[0], zoom_start=12)
 
@@ -323,7 +338,12 @@ if st.session_state.route_data:
         segment = st.session_state.api.get_route_geometry([tuple(loc_u), tuple(loc_v)])
         
         mult = traffic[u, v]
-        color = '#2ECC71' if mult <= 1.2 else ('#F39C12' if mult <= 1.5 else '#E74C3C')
+        if mult <= 1.2:
+            color = '#2ECC71'  # Green - smooth
+        elif mult <= 1.5:
+            color = '#F39C12'  # Orange - moderate
+        else:
+            color = '#E74C3C'  # Red - heavy
         
         folium.PolyLine(locations=segment, color=color, weight=6, opacity=0.85).add_to(m)
     
@@ -331,6 +351,16 @@ if st.session_state.route_data:
     
     for idx in range(1, len(route)):
         folium.Marker(st.session_state.locations[route[idx]], popup=f"Stop {idx}", icon=folium.Icon(color="blue", icon="info-sign")).add_to(m)
+    
+    all_locs = [st.session_state.locations[i] for i in route]
+    lats = [loc[0] for loc in all_locs]
+    lons = [loc[1] for loc in all_locs]
+    lat_pad = max((max(lats) - min(lats)) * 0.4, 0.02)
+    lon_pad = max((max(lons) - min(lons)) * 0.4, 0.02)
+    m.fit_bounds([
+        [min(lats) - lat_pad, min(lons) - lon_pad],
+        [max(lats) + lat_pad, max(lons) + lon_pad]
+    ])
 else:
     for i, loc in enumerate(st.session_state.locations):
         icon_color = "green" if i == 0 else "lightgray"
