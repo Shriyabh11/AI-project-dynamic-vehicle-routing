@@ -18,8 +18,8 @@ Design Philosophy:
 import numpy as np
 import torch
 from typing import Dict, Tuple
-from heuristic import heuristic_route
-from safety import SafetyMonitor
+from .heuristic import heuristic_route
+from tests.safety import SafetyMonitor
 
 
 class HybridController:
@@ -68,7 +68,7 @@ class HybridController:
         self.agent = None
         if mode in ["adaptive", "rl"]:
             try:
-                from agent import DQNAgent
+                from .agent import DQNAgent
                 state_dim = n_nodes * 3 + 2  # Simplified state
                 action_dim = n_nodes
                 self.agent = DQNAgent(state_dim, action_dim)

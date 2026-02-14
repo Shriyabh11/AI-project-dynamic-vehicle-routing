@@ -1,149 +1,86 @@
 # Dynamic Vehicle Routing with Deep Q-Learning
 
-**Real-time traffic-aware delivery routing using Deep Reinforcement Learning**
+Real-time traffic-aware delivery routing using Deep Reinforcement Learning
 
-## 🚀 Features
-
-- **Deep Q-Network (DQN)** with Dueling Architecture
-- **Hybrid Controller** - Adaptive policy switching based on traffic variance
-- **Real Road Geometry** via OSRM (OpenStreetMap)
-- **Live Traffic Visualization** with color-coded segments
-- **Interactive Dashboard** built with Streamlit
-- **2-Opt Route Optimization** for local improvements
-
-## 🧠 RL Approach
-
-### Algorithm: Deep Q-Learning (DQN)
-
-**State Representation:**
-- Current delivery position (one-hot encoded)
-- Visited/unvisited nodes (binary mask)
-- Route progress (normalized: remaining stops / total stops)
-- Real-time traffic conditions
-
-**Action Space:**
-- Select next delivery location from unvisited nodes
-
-**Reward Function:**
-```
-R = -(travel_time + delay_penalties + traffic_cost)
-```
-
-**Q-Learning Update:**
-```
-Q(s,a) ← Q(s,a) + α[r + γ·maxₐ' Q(s',a') - Q(s,a)]
-```
-
-### Network Architecture
-
-**Dueling DQN:**
-```
-Q(s,a) = V(s) + [A(s,a) - mean(A(s,·))]
-```
-- **Value Stream V(s):** Estimates state quality
-- **Advantage Stream A(s,a):** Estimates action advantage
-
-**Training Features:**
-- Prioritized Experience Replay (PER)
-- Target Network for stable learning
-- ε-greedy exploration (ε: 1.0 → 0.08)
-
-### Hybrid Controller
-
-Intelligently switches between policies based on traffic conditions:
-
-| Traffic Variance | Policy | Rationale |
-|------------------|--------|-----------|
-| < 0.02 | Heuristic | Stable traffic → fast greedy sufficient |
-| 0.02 - 0.08 | Adaptive | Moderate variance → blend approaches |
-| > 0.08 | DQN | High variance → learned policy needed |
-
-## 🎯 Quick Start
-
-### Installation
+## 🚀 Quick Start
 
 ```bash
-pip install streamlit folium numpy torch requests
-```
+# Install dependencies
+pip install -r requirements_viz.txt
 
-### Run Dashboard
+# Run dashboard
+streamlit run app/streamlit_app.py
 
-```bash
-streamlit run streamlit_app.py
-```
-
-### Train DQN Agent
-
-```bash
-python train.py
+# Train DQN agent
+python scripts/train.py
 ```
 
 ## 📁 Project Structure
 
 ```
-dynamic_routing/
-├── streamlit_app.py       # Interactive dashboard
-├── agent.py               # DQN implementation
-├── environment.py         # MDP formulation
-├── hybrid_controller.py   # Adaptive policy switching
-├── traffic_api.py         # OSRM + traffic integration
-├── train.py               # Training script
-└── dqn_agent.pth         # Trained model (500 episodes)
+AI-project-dynamic-vehicle-routing/
+├── app/
+│   └── streamlit_app.py          # Interactive dashboard
+├── src/
+│   ├── agent.py                  # DQN implementation
+│   ├── environment.py            # MDP formulation
+│   ├── heuristic.py              # Greedy & 2-opt algorithms
+│   ├── hybrid_controller.py      # Adaptive policy switching
+│   └── traffic_api.py            # OSRM + traffic integration
+├── scripts/
+│   ├── train.py                  # Training script
+│   ├── trainer.py                # Training utilities
+│   └── verify_hybrid.py          # Testing hybrid controller
+├── utils/
+│   ├── utils.py                  # Helper functions
+│   ├── visualizer.py             # Plotting utilities
+│   └── vrp.py                    # VRP solver
+├── models/
+│   └── dqn_agent.pth            # Trained DQN weights
+├── tests/
+│   ├── test_all.py              # Unit tests
+│   ├── test_osrm.py             # OSRM integration tests  
+│   └── safety.py                # Safety validation
+├── README.md
+├── requirements_viz.txt
+└── .gitignore
 ```
 
-## 🎓 Academic Context
+## 🧠 RL Approach
 
-**Course Project:** Autonomous Navigation using Reinforcement Learning
+**Algorithm:** Deep Q-Network (DQN) with Dueling Architecture
 
-**Key Concepts Demonstrated:**
-- Q-Learning with function approximation
-- Markov Decision Processes (MDPs)
-- Policy iteration vs value iteration
-- Exploration-exploitation tradeoff
-- Deep RL state representation
+**State:** `[current_pos, visited_mask, progress, traffic]`  
+**Action:** Select next delivery location  
+**Reward:** `-travel_time - delay_penalties`
 
-## 📊 Demo Flow
+**Hybrid Controller:** Adaptive policy based on traffic variance
+- Variance < 0.02 → Heuristic (fast)
+- Variance 0.02-0.08 → Adaptive blend
+- Variance > 0.08 → DQN (learned policy)
 
-1. **Add Locations** - Click map or search addresses
-2. **Generate Route** - System selects appropriate policy
-3. **View Metrics** - ETA, distance, traffic breakdown
-4. **Analyze Policy** - See which approach was used and why
+## 🎯 Features
 
-## 🛠️ Technologies
+✅ Deep Q-Learning with Dueling architecture  
+✅ Real curved roads via OSRM  
+✅ Live traffic visualization  
+✅ Hybrid controller (adaptive switching)  
+✅ 2-opt route optimization  
+✅ Interactive Streamlit dashboard
 
-- **RL Framework:** PyTorch
-- **Dashboard:** Streamlit
-- **Maps:** Folium + OSRM
-- **Traffic:** Real-time API + simulated fallback
+## 📊 Demo
 
-## 📈 Results
+1. Add locations (click map or search)
+2. Click "Route" to generate optimal path
+3. View metrics, policy, and traffic analysis
 
-**Training (500 episodes):**
-- Average Reward: -369 → -354 (improved)
-- Travel Time: 64.7 → 62.5 minutes (optimized)
-- Epsilon: 0.60 → 0.08 (exploitation)
+## 🛠️ Tech Stack
 
-**Demo Performance:**
-- Routes follow real curved streets
-- Traffic-aware path selection
-- Dynamic policy adaptation
-- Sub-second routing for 5-10 stops
-
-## 🎤 For Viva/Demo
-
-**Explain Q-Learning:**
-> "Our DQN learns Q(s,a) - the expected cumulative reward for taking action 'a' in state 's'. The Dueling architecture separates state value from action advantages, leading to better generalization across similar states."
-
-**Explain Hybrid Approach:**
-> "Rather than always using DQN, our hybrid controller adapts to traffic conditions. When traffic is stable, we use fast heuristics. When variance is high, DQN's learned policy handles the complexity."
-
-**Explain Real Roads:**
-> "Routes follow actual street networks via OSRM, not straight lines. This provides realistic travel time estimates and visually compelling demonstrations."
-
-## 📝 License
-
-Academic project for educational purposes.
+- **RL:** PyTorch
+- **Dashboard:** Streamlit + Folium
+- **Routing:** OSRM (OpenStreetMap)
+- **Optimization:** 2-opt, greedy heuristics
 
 ## 👤 Author
 
-Shriya - Autonomous Navigation RL Demo
+Shriya - Autonomous Navigation RL Project

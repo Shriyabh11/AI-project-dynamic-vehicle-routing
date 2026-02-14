@@ -15,7 +15,7 @@ import random
 from typing import Dict, List, Tuple
 from collections import deque
 
-from utils import get_device
+from utils.utils import get_device
 
 class DuelingDQNNetwork(nn.Module):
     """
